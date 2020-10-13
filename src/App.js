@@ -10,6 +10,7 @@ import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import Navbar from 'react-bootstrap/Navbar';
 import Container from 'react-bootstrap/Container';
+import axios from 'axios';
 
 // Sand Tan: #e1b382
 
@@ -25,10 +26,10 @@ class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      NameServer:"",
-      Resource : "",
+      NameServer:" ",
+      Resource : " ",
       Type: "A",
-      SourceIP: "0.0.0.0",
+      SourceIP: "",
       ReverseDNS: false,
       ReverseIP:"",
       IPVersion: "IPv4 or IPv6",
@@ -36,7 +37,7 @@ class App extends React.Component {
       Protocol: "Use default value",
       Tracing: false,
       Shorten: false,
-      PortNumber: "default",
+      PortNumber: "",
       TimeOut: 5,
       NumTries: 3
     };
@@ -51,7 +52,9 @@ class App extends React.Component {
     const name = target.name;
 
     if (name==='Recursion') {
+      console.log(value);
       value = !value;
+      console.log(value);
     }
 
     if (target.type === 'dropdown') {
@@ -70,7 +73,32 @@ class App extends React.Component {
     //alert('A name was submitted: ' + this.state.NameServer);
     console.log(event);
     console.log(this.state);
-    event.preventDefault();
+    let name = this.state.NameServer ;
+    let resourse = this.state.Resource ;
+    let type = this.state.Type ;
+    let sourceip = "-b "+ this.state.SourceIP ;
+    let reversedns = this.state.ReverseDNS  ;
+    // if reversedns is true then 
+    let reverseip = reversedns ? "-x "+this.state.ReverseIP : " " ;
+    let ipversion = (this.state.IPVersion==="IPv4")? "-4" : (this.state.IPVersion==="IPv6")? "-6" : " " ;
+    let recursion = this.state.Recursion ? " " : "+norecurse" ;
+    let protocol = (this.state.Protocol==="Use TCP only")? "+tcp" : (this.state.Protocol==="Don't use TCP")? "+notcp" : " " ;
+    let tracing = this.state.Tracing ? "+trace" : " ";
+    let shorten = this.state.Shorten ? "+short" : " ";
+    let port = "-p "+this.state.PortNumber ;
+    let timeout = "+time="+this.state.TimeOut ;
+    let numtries = "+tries="+ this.state.NumTries;
+
+
+
+    axios.get('/'+name+'/'+resourse+'/'+type + '/'+sourceip+ '/'+reverseip+'/'+ipversion+'/'+recursion+'/'+protocol+'/'+tracing+'/'+shorten+'/'+port +'/'+timeout +'/'+numtries )
+      .then(res => {
+        console.log(res);
+      })
+      .catch(err => 
+        console.log(err)
+        )
+    
   }
 
   handleDrop(event) {
