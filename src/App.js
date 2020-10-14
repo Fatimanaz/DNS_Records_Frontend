@@ -10,7 +10,9 @@ import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import Navbar from 'react-bootstrap/Navbar';
 import Container from 'react-bootstrap/Container';
+import Modal from 'react-bootstrap/Modal';
 import axios from 'axios';
+
 
 // Sand Tan: #e1b382
 
@@ -20,14 +22,36 @@ import axios from 'axios';
 
 // Night Blue Shadow: #12343b
 /* A, AAAA, TXT, MX and NS. */
+function MyVerticallyCenteredModal(props) {
+  return (
+    <Modal
+      {...props}
+      size="lg"
+      aria-labelledby="example-modal-sizes-title-lg"
+      centered
+    >
+      <Modal.Header closeButton>
+        <Modal.Title id="contained-modal-title-vcenter">
+          DNS Query OutPut
+        </Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
+       <div>{props.Result}</div>
+      </Modal.Body>
+      <Modal.Footer>
+        <Button onClick={props.onHide}>OK</Button>
+      </Modal.Footer>
+    </Modal>
+  );
+}
 
 class App extends React.Component {
 
   constructor(props) {
     super(props);
     this.state = {
-      NameServer:" ",
-      Resource : " ",
+      NameServer:"",
+      Resource : "",
       Type: "A",
       SourceIP: "",
       ReverseDNS: false,
@@ -39,11 +63,16 @@ class App extends React.Component {
       Shorten: false,
       PortNumber: "",
       TimeOut: 5,
-      NumTries: 3
+      NumTries: 3,
+      Result : "",
+      modalShow : false 
     };
 
     this.handleChange = this.handleChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
+  }
+  setModalShow = (value) => {
+    this.setState({modalShow : value}) ;
   }
 
   handleChange(event) {
@@ -69,17 +98,17 @@ class App extends React.Component {
     });
   }
 
-  handleSubmit(event) {
+  async handleSubmit(event) {
     //alert('A name was submitted: ' + this.state.NameServer);
     console.log(event);
     console.log(this.state);
-    let name = this.state.NameServer ;
-    let resourse = this.state.Resource ;
+    let name = this.state.NameServer==="" ? " " : this.state.NameServer ;
+    let resourse = this.state.Resource==="" ? " " : this.state.Resource ;
     let type = this.state.Type ;
     let sourceip = "-b "+ this.state.SourceIP ;
-    let reversedns = this.state.ReverseDNS  ;
+    let reversedns = this.state.ReverseDNS ? "true" : "false"  ;
     // if reversedns is true then 
-    let reverseip = reversedns ? "-x "+this.state.ReverseIP : " " ;
+    let reverseip = this.state.ReverseDNS ? "-x "+this.state.ReverseIP : " " ;
     let ipversion = (this.state.IPVersion==="IPv4")? "-4" : (this.state.IPVersion==="IPv6")? "-6" : " " ;
     let recursion = this.state.Recursion ? " " : "+norecurse" ;
     let protocol = (this.state.Protocol==="Use TCP only")? "+tcp" : (this.state.Protocol==="Don't use TCP")? "+notcp" : " " ;
@@ -88,16 +117,30 @@ class App extends React.Component {
     let port = "-p "+this.state.PortNumber ;
     let timeout = "+time="+this.state.TimeOut ;
     let numtries = "+tries="+ this.state.NumTries;
+    this.setModalShow(true);
+    this.setState({Result : "Loading...."});
 
 
-
-    axios.get('/'+name+'/'+resourse+'/'+type + '/'+sourceip+ '/'+reverseip+'/'+ipversion+'/'+recursion+'/'+protocol+'/'+tracing+'/'+shorten+'/'+port +'/'+timeout +'/'+numtries )
+    await axios.get('/'+name+'/'+resourse+'/'+type + '/'+sourceip+ '/'+reversedns + '/'+reverseip+'/'+ipversion+'/'+recursion+'/'+protocol+'/'+tracing+'/'+shorten+'/'+port +'/'+timeout +'/'+numtries )
       .then(res => {
-        console.log(res);
+        var ans = res.data.split("\n") ;
+        var Result = [];
+        for (let i=3 ; i<ans.length ; i++){
+          Result.push(<p key={i}>{ans[i]}</p>);
+        }
+        this.setState({
+          Result : Result 
+        });
+        console.log();
       })
-      .catch(err => 
-        console.log(err)
+      .catch(err => {
+        this.setState({
+          Result : err 
+        });
+        console.log(err);
+      }
         )
+      
     
   }
 
@@ -108,7 +151,7 @@ class App extends React.Component {
   render(){
     return (
       <div className="App">
-
+      <MyVerticallyCenteredModal  show={this.state.modalShow} onHide={() => this.setModalShow(false)} Result={this.state.Result} />
         <Navbar>
           <Navbar.Brand href="#home">
             <img
@@ -117,7 +160,7 @@ class App extends React.Component {
               width="30"
               height="30"
               className="d-inline-block align-top"
-            />{' '}
+            />{' '}res
             Fetch DNS Records
           </Navbar.Brand>
         </Navbar>
